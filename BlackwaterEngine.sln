@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Blackwater.Editor", "Blackwater.Editor\Blackwater.Editor.csproj", "{14DF57B3-81FA-4AD0-AF33-606FA7AD2B4D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Blackwater.Core", "Blackwater.Core\Blackwater.Core.vcxproj", "{F0F0DF15-5F64-4B29-A6A2-8E10B0F26E38}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{14DF57B3-81FA-4AD0-AF33-606FA7AD2B4D}.Debug|x64.ActiveCfg = Debug|x64
+		{14DF57B3-81FA-4AD0-AF33-606FA7AD2B4D}.Debug|x64.Build.0 = Debug|x64
+		{14DF57B3-81FA-4AD0-AF33-606FA7AD2B4D}.Release|x64.ActiveCfg = Release|x64
+		{14DF57B3-81FA-4AD0-AF33-606FA7AD2B4D}.Release|x64.Build.0 = Release|x64
+		{F0F0DF15-5F64-4B29-A6A2-8E10B0F26E38}.Debug|x64.ActiveCfg = Debug|x64
+		{F0F0DF15-5F64-4B29-A6A2-8E10B0F26E38}.Debug|x64.Build.0 = Debug|x64
+		{F0F0DF15-5F64-4B29-A6A2-8E10B0F26E38}.Release|x64.ActiveCfg = Release|x64
+		{F0F0DF15-5F64-4B29-A6A2-8E10B0F26E38}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+EndGlobal

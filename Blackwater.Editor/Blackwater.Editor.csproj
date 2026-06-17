@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFramework>net10.0-windows</TargetFramework>
+        <LangVersion>14</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UseWPF>true</UseWPF>
+        <OutputPath>..\bin\$(Configuration)\</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <Configurations>Release;Debug</Configurations>
+        <Platforms>x64</Platforms>
+    </PropertyGroup>
+
+</Project>
