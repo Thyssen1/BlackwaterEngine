@@ -1,0 +1,25 @@
+# Let git decide what is text, and store it with LF in the repository while
+# checking it out with the platform's native line endings. This is what stops
+# the "LF will be replaced by CRLF" warnings on every add.
+* text=auto
+
+# Sources and build files: explicitly text.
+*.cpp    text
+*.h      text
+*.hlsl   text
+*.cs     text
+*.xaml   text
+*.csproj text
+*.md     text
+*.json   text
+*.txt    text
+CMakeLists.txt text
+
+# Binary assets: never touch these.
+*.png  binary
+*.jpg  binary
+*.dds  binary
+*.gltf binary
+*.glb  binary
+*.fbx  binary
+*.ttf  binary

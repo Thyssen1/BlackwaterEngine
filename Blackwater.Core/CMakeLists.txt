@@ -20,10 +20,12 @@ set(BLACKWATER_CORE_SOURCES
     include/Blackwater/Application.h
     include/Blackwater/Check.h
     include/Blackwater/GraphicsDevice.h
+    include/Blackwater/Shader.h
     include/Blackwater/Window.h
     src/Application.cpp
     src/Check.cpp
     src/GraphicsDevice.cpp
+    src/Shader.cpp
     src/Window.cpp
 )
 
@@ -55,16 +57,14 @@ target_include_directories(Blackwater.Core
 # these to the final executable as $<LINK_ONLY:...> -- Sandbox.exe gets
 # d3d11.lib without inheriting anything else.
 #
-# Not here yet, on purpose:
-#   d3dcompiler -- runtime HLSL compilation. M0 only clears the backbuffer,
-#                  which needs no shaders. Added at M1.
 # ---------------------------------------------------------------------------
 target_link_libraries(Blackwater.Core
     PUBLIC
         Blackwater.Common
     PRIVATE
-        d3d11       # device, immediate context, resources
-        dxgi        # swap chain, adapters, presentation
+        d3d11         # device, immediate context, resources
+        dxgi          # swap chain, adapters, presentation
+        d3dcompiler   # runtime HLSL compilation (M1)
 )
 
 # Mirror the on-disk folder structure in the IDE rather than dumping every
