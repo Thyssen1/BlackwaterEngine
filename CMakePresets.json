@@ -1,0 +1,54 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "vs",
+      "displayName": "Visual Studio 2026 - x64",
+      "description": "Generates build/vs/BlackwaterEngine.sln. Multi-config: choose Debug or Release at build time, not here.",
+      "generator": "Visual Studio 18 2026",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "binaryDir": "${sourceDir}/build/vs"
+    },
+    {
+      "name": "ninja",
+      "displayName": "Ninja Multi-Config - x64",
+      "description": "Fast command-line builds. Needs cl.exe on PATH: run from 'Developer PowerShell for VS 2026'.",
+      "generator": "Ninja Multi-Config",
+      "binaryDir": "${sourceDir}/build/ninja"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "vs-debug",
+      "displayName": "VS - Debug",
+      "configurePreset": "vs",
+      "configuration": "Debug"
+    },
+    {
+      "name": "vs-release",
+      "displayName": "VS - Release",
+      "configurePreset": "vs",
+      "configuration": "Release"
+    },
+    {
+      "name": "ninja-debug",
+      "displayName": "Ninja - Debug",
+      "configurePreset": "ninja",
+      "configuration": "Debug"
+    },
+    {
+      "name": "ninja-release",
+      "displayName": "Ninja - Release",
+      "configurePreset": "ninja",
+      "configuration": "Release"
+    }
+  ]
+}
