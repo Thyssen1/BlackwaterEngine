@@ -10,6 +10,14 @@ bin/
 obj/
 /packages/
 
+# CMake — everything here is generated output
+/build/
+/lib/
+/out/
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+
 # Visual Studio cache / user files
 .vs/
 *.user
