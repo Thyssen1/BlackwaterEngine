@@ -1,43 +1,130 @@
 #include <Blackwater/Application.h>
 #include <Blackwater/Check.h>
+#include <Blackwater/ConstantBuffer.h>
+#include <Blackwater/Mesh.h>
+#include <Blackwater/Shader.h>
 
+#include <DirectXMath.h>
 #include <windows.h>
-#include <cstdio>
+#include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <exception>
+#include <iterator>
 
 namespace
 {
+    using namespace DirectX;
+
+    // ----------------------------------------------------------------------
+    // Vertex format
     //
-    // M0 sandbox.
+    // This struct and kInputLayout below must agree exactly. If they drift,
+    // CreateInputLayout fails at startup rather than drawing nonsense -- one
+    // of the few mistakes D3D11 catches for you.
+    // ----------------------------------------------------------------------
+    struct Vertex
+    {
+        XMFLOAT3 position;
+        XMFLOAT4 colour;
+    };
+
+    const D3D11_INPUT_ELEMENT_DESC kInputLayout[] =
+    {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0,
+          offsetof(Vertex, position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+
+        { "COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+          offsetof(Vertex, colour),   D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+
+    // ----------------------------------------------------------------------
+    // Constant buffer payload
     //
-    // Nothing is drawn yet -- the point here is to make the loop's behaviour
-    // visible. The title bar reports frames per second and updates per
-    // second separately, which is the whole argument for a fixed timestep:
-    // ups should sit rock-steady at 60 while fps follows the display, the
-    // window size, and whatever else the machine is doing.
+    // 64 bytes -- one 4x4 matrix -- so it already satisfies the multiple-of-16
+    // rule that ConstantBuffer<T> asserts on.
+    // ----------------------------------------------------------------------
+    struct Transforms
+    {
+        XMFLOAT4X4 worldViewProjection;
+    };
+
+    // ----------------------------------------------------------------------
+    // A unit cube: eight corners, each a different colour, so the rasterizer's
+    // interpolation is obvious.
+    //
+    //   0..3 = top    (y = +1)
+    //   4..7 = bottom (y = -1)
+    // ----------------------------------------------------------------------
+    const Vertex kVertices[] =
+    {
+        { { -1.0f,  1.0f, -1.0f }, { 0.0f, 0.0f, 1.0f, 1.0f } },
+        { {  1.0f,  1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } },
+        { {  1.0f,  1.0f,  1.0f }, { 0.0f, 1.0f, 1.0f, 1.0f } },
+        { { -1.0f,  1.0f,  1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
+        { { -1.0f, -1.0f, -1.0f }, { 1.0f, 0.0f, 1.0f, 1.0f } },
+        { {  1.0f, -1.0f, -1.0f }, { 1.0f, 1.0f, 0.0f, 1.0f } },
+        { {  1.0f, -1.0f,  1.0f }, { 1.0f, 1.0f, 1.0f, 1.0f } },
+        { { -1.0f, -1.0f,  1.0f }, { 0.0f, 0.0f, 0.0f, 1.0f } },
+    };
+
+    // Winding order matters. D3D11's default rasterizer culls back faces and
+    // treats CLOCKWISE (in screen space) as front-facing. Reverse a triangle
+    // here and that face simply vanishes -- a "hole" in the cube that looks
+    // like a depth bug but is not.
+    const uint32_t kIndices[] =
+    {
+        3, 1, 0,   2, 1, 3,     // top
+        0, 5, 4,   1, 5, 0,     // front
+        3, 4, 7,   0, 4, 3,     // left
+        1, 6, 5,   2, 6, 1,     // right
+        2, 7, 6,   3, 7, 2,     // back
+        6, 4, 5,   7, 4, 6,     // bottom
+    };
+
+    constexpr double kRotationsPerSecond = 0.15;
+    constexpr double kRadiansPerSecond   = kRotationsPerSecond * 2.0 * 3.14159265358979323846;
+
+    //
+    // M1: a spinning cube.
     //
     class SandboxApp final : public bw::Application
     {
     public:
-        using bw::Application::Application;   // reuse the base constructors
+        explicit SandboxApp(const Config& config)
+            : bw::Application(config)
+            // Base classes are fully constructed before derived members are,
+            // so GetGraphics() is already valid here. That is what lets these
+            // be plain members rather than unique_ptrs, despite being
+            // non-movable.
+            , m_shader(GetGraphics().Device(), L"shaders\\Basic.hlsl",
+                       "VSMain", "PSMain", kInputLayout)
+            , m_mesh(GetGraphics().Device(),
+                     kVertices, std::size(kVertices), sizeof(Vertex),
+                     kIndices)
+            , m_transforms(GetGraphics().Device())
+        {
+        }
 
     protected:
         void OnUpdate(double fixedDeltaSeconds) override
         {
-            ++m_updates;
+            // Keep the previous angle so OnRender can interpolate between the
+            // two. Without this there is nothing to interpolate *from*, and
+            // alpha would be useless.
+            m_previousAngle = m_currentAngle;
+            m_currentAngle += static_cast<float>(kRadiansPerSecond * fixedDeltaSeconds);
 
-            // Summing the fixed delta rather than reading a clock: these
-            // steps are exactly 1/60 s each by construction, so this is an
-            // exact one-second window with no drift.
+            ++m_updates;
             m_secondAccumulator += fixedDeltaSeconds;
 
             if (m_secondAccumulator >= 1.0)
             {
-                wchar_t title[128];
+                wchar_t title[160];
                 ::swprintf_s(title,
-                             L"Blackwater - M0   |   %u fps   |   %u ups",
-                             m_frames, m_updates);
+                             L"Blackwater - M1   |   %u fps   |   %u ups   |   debug layer: %s",
+                             m_frames, m_updates,
+                             GetGraphics().IsDebugLayerActive() ? L"ON" : L"off");
 
                 GetWindow().SetTitle(title);
 
@@ -47,15 +134,63 @@ namespace
             }
         }
 
-        void OnRender(double /*alpha*/) override
+        void OnRender(double alpha) override
         {
             ++m_frames;
 
-            // M1 puts geometry here, and alpha starts being used to
-            // interpolate between the last two simulation states.
+            // The payoff for the accumulator. The simulation advances 60 times
+            // a second; this draws the cube *between* those states, so motion
+            // stays smooth at any refresh rate. Replace `angle` with
+            // m_currentAngle to see the judder alpha exists to remove.
+            const float angle =
+                m_previousAngle + (m_currentAngle - m_previousAngle) * static_cast<float>(alpha);
+
+            auto& graphics = GetGraphics();
+
+            const float aspect =
+                static_cast<float>(graphics.Width()) / static_cast<float>(graphics.Height());
+
+            const XMMATRIX world = XMMatrixRotationY(angle) * XMMatrixRotationX(angle * 0.5f);
+
+            const XMMATRIX view = XMMatrixLookAtLH(
+                XMVectorSet(0.0f, 2.0f, -6.0f, 1.0f),   // eye
+                XMVectorZero(),                          // looking at the origin
+                XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));    // up
+
+            const XMMATRIX projection = XMMatrixPerspectiveFovLH(
+                XM_PIDIV4,      // 45 degree vertical field of view
+                aspect,
+                0.1f,           // near plane
+                100.0f);        // far plane
+
+            // Row-vector convention: a vertex flows world -> view -> clip, so
+            // the matrices multiply in that order.
+            //
+            // XMMATRIX is 16-byte-aligned SIMD and belongs on the stack for
+            // computation; XMFLOAT4X4 is plain floats and is what gets stored
+            // and uploaded. Transposing here is what makes HLSL's column-major
+            // packing line up with DirectXMath's row-major storage.
+            Transforms transforms{};
+            XMStoreFloat4x4(&transforms.worldViewProjection,
+                            XMMatrixTranspose(world * view * projection));
+
+            auto* context = graphics.Context();
+
+            m_transforms.Update(context, transforms);
+            m_transforms.BindToVertexStage(context, 0);
+
+            m_shader.Bind(context);
+            m_mesh.Draw(context);
         }
 
     private:
+        bw::Shader                     m_shader;
+        bw::Mesh                       m_mesh;
+        bw::ConstantBuffer<Transforms> m_transforms;
+
+        float m_previousAngle = 0.0f;
+        float m_currentAngle  = 0.0f;
+
         double   m_secondAccumulator = 0.0;
         uint32_t m_frames            = 0;
         uint32_t m_updates           = 0;
@@ -66,10 +201,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 {
     try
     {
-        // C++20 designated initialisers -- the closest thing C++ has to a C#
-        // object initialiser. Fields must appear in declaration order.
         SandboxApp app(bw::Application::Config{
-            .title  = L"Blackwater - M0",
+            .title  = L"Blackwater - M1",
             .width  = 1280,
             .height = 720,
         });
@@ -84,6 +217,8 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
     }
     catch (const std::exception& e)
     {
+        // HLSL compile errors arrive here, carrying the compiler's own
+        // diagnostics with line numbers.
         ::MessageBoxA(nullptr, e.what(), "Blackwater - fatal error",
                       MB_OK | MB_ICONERROR);
         return 1;

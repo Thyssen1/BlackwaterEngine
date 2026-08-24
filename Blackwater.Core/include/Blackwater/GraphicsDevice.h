@@ -43,6 +43,13 @@ namespace bw
         /// Shows the finished frame. vsync=true waits for the next refresh.
         void Present(bool vsync);
 
+        /// True when the device was created with the D3D11 debug layer.
+        ///
+        /// False means the layer was requested but unavailable (Windows'
+        /// "Graphics Tools" feature missing or incomplete) and the device was
+        /// created without it. Always false in Release builds.
+        [[nodiscard]] bool IsDebugLayerActive() const noexcept { return m_debugLayerActive; }
+
         [[nodiscard]] ID3D11Device*        Device()  const noexcept { return m_device.Get(); }
         [[nodiscard]] ID3D11DeviceContext* Context() const noexcept { return m_context.Get(); }
         [[nodiscard]] uint32_t             Width()   const noexcept { return m_width; }
@@ -61,5 +68,6 @@ namespace bw
 
         uint32_t m_width  = 0;
         uint32_t m_height = 0;
+        bool     m_debugLayerActive = false;
     };
 }

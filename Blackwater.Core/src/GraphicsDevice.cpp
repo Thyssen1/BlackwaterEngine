@@ -91,6 +91,13 @@ namespace bw
 #endif
 
         BW_CHECK(hr);
+
+        // If the debug flag survived the fallback above, the layer is really
+        // running. This is the authoritative answer -- far more reliable than
+        // guessing at which DLL name a given Windows version uses, since the
+        // 64-bit layer ships as d3d11_3SDKLayers.dll while the legacy
+        // D3D11SDKLayers.dll name persists only for 32-bit.
+        m_debugLayerActive = (flags & D3D11_CREATE_DEVICE_DEBUG) != 0;
     }
 
     void GraphicsDevice::CreateSwapChain(HWND hwnd)

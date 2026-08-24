@@ -141,11 +141,20 @@ MSBuild folder version). `v143` is VS 2022 and is not installed here.
 | COM | **`ComPtr<T>` everywhere** | RAII refcounting. Never a raw COM pointer |
 | Debug | **D3D11 debug layer in Debug builds** | Catches API misuse immediately; gated behind `BW_DEBUG` |
 
-⚠️ The debug layer lives in Windows' **Graphics Tools** optional feature
-(`D3D11SDKLayers.dll`). Without it, `D3D11CreateDevice` *fails* when the debug
-flag is set, so `GraphicsDevice` retries without it and logs a note to the
-debugger. Install it via **Settings → System → Optional features → Graphics
-Tools** to get validation and COM leak reports.
+⚠️ The debug layer lives in Windows' **Graphics Tools** optional feature. Without
+it, `D3D11CreateDevice` *fails* when the debug flag is set, so `GraphicsDevice`
+retries without it and logs a note to the debugger. Install with:
+
+```powershell
+Add-WindowsCapability -Online -Name "Tools.Graphics.DirectX~~~~0.0.1.0"   # elevated
+```
+
+**Do not test for it by filename.** The modern 64-bit layer ships as
+`d3d11_3SDKLayers.dll`; the legacy `D3D11SDKLayers.dll` name survives only as
+the 32-bit copy in `SysWOW64`, so checking that path reports a false negative on
+x64. Use `GraphicsDevice::IsDebugLayerActive()` instead — it reports whether the
+device was actually created with the layer, which is the only answer that
+matters.
 
 The camera is **WC3-style**: fixed-ish pitch looking down at the party, free rotation and
 zoom. It reads as isometric without being an orthographic 2D fake.
@@ -236,7 +245,7 @@ system that consumes its data** — never author content nothing can read.
 | # | Milestone | Outcome |
 |---|---|---|
 | **M0** ✅ | **Heartbeat** | Win32 window + message pump; D3D11 device, flip-model swap chain, RTV, depth-stencil; fixed-timestep loop; clears to a colour |
-| **M1** | **First geometry** | Vertex/index buffers, HLSL shaders, constant buffers, MVP via DirectXMath, depth testing. A cube spins |
+| **M1** ✅ | **First geometry** | Vertex/index buffers, HLSL shaders, constant buffers, MVP via DirectXMath, depth testing. A cube spins |
 | **M2** | **Camera & ground** | WC3-style orbit camera; a ground plane/terrain grid; screen→world ray |
 | **M3** | **Meshes** | glTF loading, textures, samplers, a basic material + Blinn-Phong light |
 | **M4** | **Animation** | Skeletons, skinning, animation clips, blending. A character idles and walks |

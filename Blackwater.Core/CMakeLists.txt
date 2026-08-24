@@ -19,12 +19,15 @@
 set(BLACKWATER_CORE_SOURCES
     include/Blackwater/Application.h
     include/Blackwater/Check.h
+    include/Blackwater/ConstantBuffer.h
     include/Blackwater/GraphicsDevice.h
+    include/Blackwater/Mesh.h
     include/Blackwater/Shader.h
     include/Blackwater/Window.h
     src/Application.cpp
     src/Check.cpp
     src/GraphicsDevice.cpp
+    src/Mesh.cpp
     src/Shader.cpp
     src/Window.cpp
 )
