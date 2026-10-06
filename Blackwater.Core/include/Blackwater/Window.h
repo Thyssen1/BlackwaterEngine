@@ -7,6 +7,8 @@
 // forget to call and no Dispose() to skip -- destruction is the destructor.
 //
 
+#include "Blackwater/Input.h"
+
 #include <windows.h>
 #include <cstdint>
 
@@ -43,6 +45,10 @@ namespace bw
         /// every mouse move during a border drag.
         [[nodiscard]] bool ConsumeResized() noexcept;
 
+        /// Keyboard and mouse state, fed from this window's messages.
+        [[nodiscard]] Input&       GetInput()       noexcept { return m_input; }
+        [[nodiscard]] const Input& GetInput() const noexcept { return m_input; }
+
         /// Replaces the text in the title bar.
         void SetTitle(const wchar_t* title) noexcept;
 
@@ -64,6 +70,11 @@ namespace bw
         /// The real message handler, with a `this` to work against.
         LRESULT HandleMessage(UINT msg, WPARAM wparam, LPARAM lparam);
 
+        /// Mouse buttons route through one helper: update Input, then take or
+        /// release mouse capture.
+        void HandleMouseButton(MouseButton button, bool down) noexcept;
+
+        Input    m_input;
         HWND     m_hwnd      = nullptr;
         uint32_t m_width     = 0;
         uint32_t m_height    = 0;

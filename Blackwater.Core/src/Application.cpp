@@ -71,6 +71,13 @@ namespace bw
             while (accumulator >= fixedDelta)
             {
                 OnUpdate(fixedDelta);
+
+                // Clear "pressed this step" flags and deltas *per update*, not
+                // per frame. A frame that runs zero updates keeps them pending
+                // for the next one, so no click is lost; a frame that runs
+                // several hands the click to the first update only.
+                m_window.GetInput().EndUpdate();
+
                 accumulator -= fixedDelta;
             }
 
