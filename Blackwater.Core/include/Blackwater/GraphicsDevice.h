@@ -59,12 +59,18 @@ namespace bw
         void CreateDevice();
         void CreateSwapChain(HWND hwnd);
         void CreateBackBufferViews();
+        void CreateRenderStates();
 
         ComPtr<ID3D11Device>           m_device;
         ComPtr<ID3D11DeviceContext>    m_context;
         ComPtr<IDXGISwapChain1>        m_swapChain;
         ComPtr<ID3D11RenderTargetView> m_renderTargetView;
         ComPtr<ID3D11DepthStencilView> m_depthStencilView;
+
+        // Pipeline state objects. Immutable once created: described once,
+        // validated once by the device, then only ever bound.
+        ComPtr<ID3D11RasterizerState>   m_rasterizerState;
+        ComPtr<ID3D11DepthStencilState> m_depthStencilState;
 
         uint32_t m_width  = 0;
         uint32_t m_height = 0;
