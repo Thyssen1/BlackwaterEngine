@@ -4,7 +4,7 @@ project(BlackwaterEngine
     VERSION     0.1.0
     DESCRIPTION "Isometric ARPG engine (Win32 + D3D11)"
     LANGUAGES   CXX)
-
+  
 # ---------------------------------------------------------------------------
 # Platform guard
 #

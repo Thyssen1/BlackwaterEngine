@@ -246,7 +246,7 @@ system that consumes its data** — never author content nothing can read.
 |---|---|---|
 | **M0** ✅ | **Heartbeat** | Win32 window + message pump; D3D11 device, flip-model swap chain, RTV, depth-stencil; fixed-timestep loop; clears to a colour |
 | **M1** ✅ | **First geometry** | Vertex/index buffers, HLSL shaders, constant buffers, MVP via DirectXMath, depth testing. A cube spins |
-| **M2** | **Camera & ground** | WC3-style orbit camera; a ground plane/terrain grid; screen→world ray |
+| **M2** ✅ | **Camera & ground** | WC3-style orbit camera; a ground plane/terrain grid; screen→world ray |
 | **M3** | **Meshes** | glTF loading, textures, samplers, a basic material + Blinn-Phong light |
 | **M4** | **Animation** | Skeletons, skinning, animation clips, blending. A character idles and walks |
 | **M5** | **Movement** | Right-click → ground pick → **A\*** on a nav grid → the character walks the path |

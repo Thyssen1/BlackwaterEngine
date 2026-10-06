@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <exception>
 #include <iterator>
+#include <vector>
 
 namespace
 {
@@ -95,8 +96,69 @@ namespace
     constexpr float kZoomFactorPerNotch      = 0.88f;   // < 1: each notch moves 12% closer
     constexpr float kZoomNotchesPerSecond    = 6.0f;    // Up/Down held
 
+    // ----------------------------------------------------------------------
+    // Ground grid
+    // ----------------------------------------------------------------------
+    constexpr int   kGridHalfExtent = 10;   // lines from -10 to +10
+    constexpr float kGridY          = 0.0f;
+
+    const XMFLOAT4 kGridColour  = { 0.22f, 0.26f, 0.30f, 1.0f };
+    const XMFLOAT4 kAxisXColour = { 0.60f, 0.22f, 0.22f, 1.0f };   // reddish: the X axis
+    const XMFLOAT4 kAxisZColour = { 0.22f, 0.32f, 0.60f, 1.0f };   // bluish:  the Z axis
+
     //
-    // M1: a spinning cube.
+    // Builds the grid as a LINELIST: every two indices are one segment.
+    //
+    // Returns a Mesh by value even though Mesh is non-copyable and
+    // non-movable. Since C++17, `return Mesh(...)` does not create a temporary
+    // to be copied or moved -- the object is constructed directly in the
+    // caller's storage ("guaranteed copy elision"). That is what lets a
+    // factory function produce an immovable type.
+    //
+    bw::Mesh MakeGrid(ID3D11Device* device)
+    {
+        std::vector<Vertex>   vertices;
+        std::vector<uint32_t> indices;
+
+        const auto addLine = [&](XMFLOAT3 from, XMFLOAT3 to, XMFLOAT4 colour)
+        {
+            indices.push_back(static_cast<uint32_t>(vertices.size()));
+            vertices.push_back({ from, colour });
+            indices.push_back(static_cast<uint32_t>(vertices.size()));
+            vertices.push_back({ to, colour });
+        };
+
+        const auto extent = static_cast<float>(kGridHalfExtent);
+
+        for (int i = -kGridHalfExtent; i <= kGridHalfExtent; ++i)
+        {
+            const auto offset = static_cast<float>(i);
+
+            // Line running along X, at z = offset. The one through the origin
+            // is the X axis.
+            addLine({ -extent, kGridY, offset }, { extent, kGridY, offset },
+                    i == 0 ? kAxisXColour : kGridColour);
+
+            // Line running along Z, at x = offset. The one through the origin
+            // is the Z axis.
+            addLine({ offset, kGridY, -extent }, { offset, kGridY, extent },
+                    i == 0 ? kAxisZColour : kGridColour);
+        }
+
+        // The vectors die when this function returns. That is fine: Mesh
+        // copied their contents into IMMUTABLE GPU buffers in its constructor.
+        return bw::Mesh(device,
+                        vertices.data(), vertices.size(), sizeof(Vertex),
+                        indices,
+                        D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+    }
+
+    constexpr float kCubeHalfSize   = 1.0f;    // the cube mesh spans -1..+1
+    constexpr float kMarkerScale    = 0.25f;
+
+    //
+    // M2: an orbit camera over a ground grid. The cube spins on the ground;
+    // right-click places a marker where the cursor's ray meets the ground.
     //
     class SandboxApp final : public bw::Application
     {
@@ -109,9 +171,10 @@ namespace
             // non-movable.
             , m_shader(GetGraphics().Device(), L"shaders\\Basic.hlsl",
                        "VSMain", "PSMain", kInputLayout)
-            , m_mesh(GetGraphics().Device(),
+            , m_cube(GetGraphics().Device(),
                      kVertices, std::size(kVertices), sizeof(Vertex),
                      kIndices)
+            , m_grid(MakeGrid(GetGraphics().Device()))
             , m_transforms(GetGraphics().Device())
         {
         }
@@ -120,6 +183,7 @@ namespace
         void OnUpdate(double fixedDeltaSeconds) override
         {
             UpdateCamera(static_cast<float>(fixedDeltaSeconds));
+            UpdateMarker();
 
             // Keep the previous angle so OnRender can interpolate between the
             // two. Without this there is nothing to interpolate *from*, and
@@ -162,34 +226,104 @@ namespace
             const float aspect =
                 static_cast<float>(graphics.Width()) / static_cast<float>(graphics.Height());
 
-            const XMMATRIX world = XMMatrixRotationY(angle) * XMMatrixRotationX(angle * 0.5f);
-
             // The camera interpolates its own pose by alpha, the same way the
-            // cube's angle is interpolated above.
-            const XMMATRIX view       = m_camera.View(static_cast<float>(alpha));
-            const XMMATRIX projection = m_camera.Projection(aspect);
+            // cube's angle is interpolated above. View and projection are the
+            // same for every object this frame, so combine them once.
+            const XMMATRIX viewProjection =
+                m_camera.View(static_cast<float>(alpha)) * m_camera.Projection(aspect);
 
-            // Row-vector convention: a vertex flows world -> view -> clip, so
-            // the matrices multiply in that order.
-            //
-            // XMMATRIX is 16-byte-aligned SIMD and belongs on the stack for
-            // computation; XMFLOAT4X4 is plain floats and is what gets stored
-            // and uploaded. Transposing here is what makes HLSL's column-major
-            // packing line up with DirectXMath's row-major storage.
-            Transforms transforms{};
-            XMStoreFloat4x4(&transforms.worldViewProjection,
-                            XMMatrixTranspose(world * view * projection));
-
+            // Shared by every draw below: one shader, one constant buffer
+            // slot. Only the buffer's *contents* change per draw.
             auto* context = graphics.Context();
-
-            m_transforms.Update(context, transforms);
+            m_shader.Bind(context);
             m_transforms.BindToVertexStage(context, 0);
 
-            m_shader.Bind(context);
-            m_mesh.Draw(context);
+            // Ground: the grid's vertices are already in world space.
+            DrawMesh(m_grid, XMMatrixIdentity(), viewProjection);
+
+            // Cube: spin around Y, then lift by its half-height so its bottom
+            // face rests on the ground instead of being sunk halfway in.
+            DrawMesh(m_cube,
+                     XMMatrixRotationY(angle) * XMMatrixTranslation(0.0f, kCubeHalfSize, 0.0f),
+                     viewProjection);
+
+            // Marker: the same cube mesh, scaled down and moved to the last
+            // right-click. One set of vertices, two objects -- "where and how
+            // big" lives in the world matrix, not in the geometry.
+            if (m_hasMarker)
+            {
+                DrawMesh(m_cube,
+                         XMMatrixScaling(kMarkerScale, kMarkerScale, kMarkerScale) *
+                         XMMatrixTranslation(m_marker.x,
+                                             m_marker.y + kCubeHalfSize * kMarkerScale,
+                                             m_marker.z),
+                         viewProjection);
+            }
         }
 
     private:
+        //
+        // Uploads one object's transform and draws it.
+        //
+        // Rewriting the same constant buffer before every draw is safe because
+        // ConstantBuffer::Update maps with WRITE_DISCARD: each Map hands back
+        // fresh memory ("renaming"), so a draw already queued keeps reading
+        // the matrix it was issued with.
+        //
+        // FXMMATRIX / CXMMATRIX are DirectXMath's parameter types for
+        // XM_CALLCONV functions: the first matrix travels in registers, later
+        // ones by reference. Using them is the idiom; the compiler would
+        // accept plain `const XMMATRIX&` too.
+        //
+        void XM_CALLCONV DrawMesh(const bw::Mesh& mesh, FXMMATRIX world, CXMMATRIX viewProjection)
+        {
+            // Row-vector convention: vertex -> world -> view -> clip, so the
+            // matrices multiply in that order. Transposed because HLSL packs
+            // float4x4 column-major while DirectXMath stores row-major.
+            Transforms transforms{};
+            XMStoreFloat4x4(&transforms.worldViewProjection,
+                            XMMatrixTranspose(world * viewProjection));
+
+            auto* context = GetGraphics().Context();
+            m_transforms.Update(context, transforms);
+            mesh.Draw(context);
+        }
+
+        //
+        // Right-click: cast a ray from the cursor and drop the marker where it
+        // meets the ground. This is exactly the query right-click-to-move will
+        // make at M5 -- only the response changes.
+        //
+        void UpdateMarker()
+        {
+            const bw::Input& input = GetWindow().GetInput();
+
+            // WasButtonPressed, not IsButtonDown: one click, one placement.
+            // Holding the button should not re-place it every step.
+            if (!input.WasButtonPressed(bw::MouseButton::Right))
+            {
+                return;
+            }
+
+            const auto& graphics = GetGraphics();
+
+            // Mouse coordinates are client-area pixels and the viewport covers
+            // the whole client area, so the two line up directly.
+            const bw::Ray ray = m_camera.ScreenToWorldRay(
+                static_cast<float>(input.MouseX()),
+                static_cast<float>(input.MouseY()),
+                static_cast<float>(graphics.Width()),
+                static_cast<float>(graphics.Height()));
+
+            XMFLOAT3 hit{};
+            if (bw::IntersectGroundPlane(ray, kGridY, hit))
+            {
+                m_marker    = hit;
+                m_hasMarker = true;
+            }
+            // No hit -- the ray points at the sky. Leave the marker where it is.
+        }
+
         void UpdateCamera(float deltaSeconds)
         {
             const bw::Input& input = GetWindow().GetInput();
@@ -227,8 +361,12 @@ namespace
 
         bw::Camera                     m_camera;
         bw::Shader                     m_shader;
-        bw::Mesh                       m_mesh;
+        bw::Mesh                       m_cube;
+        bw::Mesh                       m_grid;
         bw::ConstantBuffer<Transforms> m_transforms;
+
+        XMFLOAT3 m_marker{};
+        bool     m_hasMarker = false;
 
         float m_previousAngle = 0.0f;
         float m_currentAngle  = 0.0f;

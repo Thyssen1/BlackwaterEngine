@@ -25,6 +25,8 @@ Tone: **dark and grounded.** Not grimdark, but not heroic-bright either.
 | | |
 |---|---|
 | **Camera** | WC3-style: 3D, fixed-ish downward pitch, free rotate and zoom. Reads as isometric without being 2D |
+| **Rotate camera** | **Middle-mouse drag** or **← / →** (both feed one yaw input) |
+| **Zoom** | **Mouse wheel** or **↑ / ↓**, clamped |
 | **Move** | **Right-click** the ground to move (Diablo / WC3 convention) |
 | **Select** | Left-click a hero; click-drag to band-select; `Tab` to cycle |
 | **Abilities** | **`1` `2` `3`** and **`Q` `W` `E` `D`** hotbar |
