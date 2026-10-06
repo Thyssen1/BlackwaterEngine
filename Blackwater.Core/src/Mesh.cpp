@@ -7,9 +7,11 @@ namespace bw
                const void* vertices,
                size_t vertexCount,
                uint32_t vertexStride,
-               std::span<const uint32_t> indices)
+               std::span<const uint32_t> indices,
+               D3D11_PRIMITIVE_TOPOLOGY topology)
         : m_vertexStride(vertexStride)
         , m_indexCount(static_cast<uint32_t>(indices.size()))
+        , m_topology(topology)
     {
         // ------------------------------------------------------------------
         // Vertex buffer
@@ -63,9 +65,10 @@ namespace bw
         // spectacular garbage.
         context->IASetIndexBuffer(m_indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 
-        // How to group the indices. TRIANGLELIST means every three indices are
-        // one independent triangle.
-        context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        // How to group the indices -- chosen at construction. Topology is
+        // pipeline state like everything else here, so it is set per draw:
+        // the previous mesh may have left a different one bound.
+        context->IASetPrimitiveTopology(m_topology);
 
         context->DrawIndexed(m_indexCount, 0, 0);
     }

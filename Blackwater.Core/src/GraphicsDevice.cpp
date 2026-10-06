@@ -19,6 +19,7 @@ namespace bw
         CreateDevice();
         CreateSwapChain(hwnd);
         CreateBackBufferViews();
+        CreateRenderStates();
     }
 
     GraphicsDevice::~GraphicsDevice()
@@ -182,6 +183,38 @@ namespace bw
         // it is why local ComPtrs here are correct rather than a leak.
     }
 
+    void GraphicsDevice::CreateRenderStates()
+    {
+        // These match D3D11's built-in defaults -- the state you get by binding
+        // nullptr. Spelling them out changes nothing on screen; it makes the
+        // choices visible, and gives CULL_NONE (two-sided geometry) or a
+        // wireframe debug view somewhere to live.
+
+        // --- Rasterizer -----------------------------------------------------
+        D3D11_RASTERIZER_DESC rasterizer{};
+        rasterizer.FillMode              = D3D11_FILL_SOLID;
+        rasterizer.CullMode              = D3D11_CULL_BACK;   // discard back faces
+        rasterizer.FrontCounterClockwise = FALSE;             // clockwise = front
+        rasterizer.DepthClipEnable       = TRUE;              // clip past near/far
+
+        BW_CHECK(m_device->CreateRasterizerState(
+            &rasterizer, m_rasterizerState.ReleaseAndGetAddressOf()));
+
+        // --- Depth-stencil ----------------------------------------------------
+        D3D11_DEPTH_STENCIL_DESC depth{};
+        depth.DepthEnable    = TRUE;
+        depth.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;    // record what we draw
+
+        // LESS: a pixel survives only if it is nearer than what is already
+        // stored. Paired with clearing depth to 1.0 (the far plane) in
+        // Clear(), the first surface drawn always passes.
+        depth.DepthFunc      = D3D11_COMPARISON_LESS;
+        depth.StencilEnable  = FALSE;
+
+        BW_CHECK(m_device->CreateDepthStencilState(
+            &depth, m_depthStencilState.ReleaseAndGetAddressOf()));
+    }
+
     void GraphicsDevice::Resize(uint32_t width, uint32_t height)
     {
         // Minimising reports 0x0, which is not a legal buffer size.
@@ -233,6 +266,11 @@ namespace bw
         viewport.MinDepth = 0.0f;
         viewport.MaxDepth = 1.0f;
         m_context->RSSetViewports(1, &viewport);
+
+        // Bound every frame alongside the viewport. Binding is cheap -- the
+        // expensive validation happened once, at creation.
+        m_context->RSSetState(m_rasterizerState.Get());
+        m_context->OMSetDepthStencilState(m_depthStencilState.Get(), 0);
 
         m_context->ClearRenderTargetView(m_renderTargetView.Get(), colourRGBA);
 

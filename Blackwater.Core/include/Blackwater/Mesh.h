@@ -24,12 +24,16 @@ namespace bw
         /// vertices     raw bytes of the vertex array
         /// vertexCount  number of vertices
         /// vertexStride size of one vertex, in bytes
-        /// indices      triangle indices, three per triangle
+        /// indices      grouped according to topology
+        /// topology     how indices form primitives:
+        ///                TRIANGLELIST -- every 3 indices are one triangle
+        ///                LINELIST     -- every 2 indices are one line segment
         Mesh(ID3D11Device* device,
              const void* vertices,
              size_t vertexCount,
              uint32_t vertexStride,
-             std::span<const uint32_t> indices);
+             std::span<const uint32_t> indices,
+             D3D11_PRIMITIVE_TOPOLOGY topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
         Mesh(const Mesh&)            = delete;
         Mesh& operator=(const Mesh&) = delete;
@@ -48,5 +52,7 @@ namespace bw
 
         uint32_t m_vertexStride = 0;
         uint32_t m_indexCount   = 0;
+
+        D3D11_PRIMITIVE_TOPOLOGY m_topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     };
 }
