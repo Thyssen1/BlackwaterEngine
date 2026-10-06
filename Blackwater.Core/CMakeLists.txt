@@ -18,15 +18,19 @@
 # up in Solution Explorer instead of being invisible.
 set(BLACKWATER_CORE_SOURCES
     include/Blackwater/Application.h
+    include/Blackwater/Camera.h
     include/Blackwater/Check.h
     include/Blackwater/ConstantBuffer.h
     include/Blackwater/GraphicsDevice.h
+    include/Blackwater/Input.h
     include/Blackwater/Mesh.h
     include/Blackwater/Shader.h
     include/Blackwater/Window.h
     src/Application.cpp
+    src/Camera.cpp
     src/Check.cpp
     src/GraphicsDevice.cpp
+    src/Input.cpp
     src/Mesh.cpp
     src/Shader.cpp
     src/Window.cpp

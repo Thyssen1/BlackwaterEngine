@@ -1,6 +1,8 @@
 #include "Blackwater/Window.h"
 #include "Blackwater/Check.h"
 
+#include <windowsx.h>   // GET_X_LPARAM / GET_Y_LPARAM
+
 namespace
 {
     constexpr const wchar_t* kWindowClassName = L"BlackwaterWindow";
@@ -154,6 +156,44 @@ namespace bw
             return 0;
         }
 
+        // ------------------------------------------------------------------
+        // Keyboard
+        //
+        // Only WM_KEYDOWN/UP. Alt combinations arrive as WM_SYSKEYDOWN, which
+        // falls through to DefWindowProc -- that is what keeps Alt+F4 working.
+        // ------------------------------------------------------------------
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+            m_input.OnKey(static_cast<uint8_t>(wparam), msg == WM_KEYDOWN);
+            return 0;
+
+        // ------------------------------------------------------------------
+        // Mouse
+        // ------------------------------------------------------------------
+        case WM_MOUSEMOVE:
+            // GET_X_LPARAM, not LOWORD. LOWORD is unsigned, so a cursor
+            // captured and dragged left of the window (or onto a monitor to
+            // the left) would read -5 as 65531.
+            m_input.OnMouseMove(GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam));
+            return 0;
+
+        case WM_MOUSEWHEEL:
+            // The lparam here holds *screen* coordinates, not client ones --
+            // unlike every other mouse message. We only want the wheel amount.
+            m_input.OnMouseWheel(GET_WHEEL_DELTA_WPARAM(wparam));
+            return 0;
+
+        case WM_LBUTTONDOWN: HandleMouseButton(MouseButton::Left,   true);  return 0;
+        case WM_LBUTTONUP:   HandleMouseButton(MouseButton::Left,   false); return 0;
+        case WM_RBUTTONDOWN: HandleMouseButton(MouseButton::Right,  true);  return 0;
+        case WM_RBUTTONUP:   HandleMouseButton(MouseButton::Right,  false); return 0;
+        case WM_MBUTTONDOWN: HandleMouseButton(MouseButton::Middle, true);  return 0;
+        case WM_MBUTTONUP:   HandleMouseButton(MouseButton::Middle, false); return 0;
+
+        case WM_KILLFOCUS:
+            m_input.OnFocusLost();
+            return 0;
+
         case WM_DESTROY:
             // Posts WM_QUIT, which PumpMessages sees and reports as "stop".
             ::PostQuitMessage(0);
@@ -161,6 +201,24 @@ namespace bw
 
         default:
             return ::DefWindowProcW(m_hwnd, msg, wparam, lparam);
+        }
+    }
+
+    void Window::HandleMouseButton(MouseButton button, bool down) noexcept
+    {
+        m_input.OnMouseButton(button, down);
+
+        // Mouse capture: while any button is held, mouse messages keep coming
+        // to this window even after the cursor leaves it. Without it, a
+        // middle-drag that strays outside the window stops rotating, and the
+        // button-up lands elsewhere -- leaving the button stuck "down".
+        if (down)
+        {
+            ::SetCapture(m_hwnd);
+        }
+        else if (!m_input.AnyButtonDown())
+        {
+            ::ReleaseCapture();
         }
     }
 

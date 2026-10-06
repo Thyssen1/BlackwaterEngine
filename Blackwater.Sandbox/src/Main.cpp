@@ -1,4 +1,5 @@
-#include <Blackwater/Application.h>
+﻿#include <Blackwater/Application.h>
+#include <Blackwater/Camera.h>
 #include <Blackwater/Check.h>
 #include <Blackwater/ConstantBuffer.h>
 #include <Blackwater/Mesh.h>
@@ -6,6 +7,7 @@
 
 #include <DirectXMath.h>
 #include <windows.h>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -85,6 +87,14 @@ namespace
     constexpr double kRotationsPerSecond = 0.15;
     constexpr double kRadiansPerSecond   = kRotationsPerSecond * 2.0 * 3.14159265358979323846;
 
+    // Camera controls. Middle-drag and Left/Right both produce a yaw delta;
+    // wheel and Up/Down both produce zoom "notches". One path per axis means
+    // the two bindings cannot disagree about direction or feel.
+    constexpr float kRotateRadiansPerPixel   = 0.008f;
+    constexpr float kRotateRadiansPerSecond  = 2.0f;
+    constexpr float kZoomFactorPerNotch      = 0.88f;   // < 1: each notch moves 12% closer
+    constexpr float kZoomNotchesPerSecond    = 6.0f;    // Up/Down held
+
     //
     // M1: a spinning cube.
     //
@@ -109,6 +119,8 @@ namespace
     protected:
         void OnUpdate(double fixedDeltaSeconds) override
         {
+            UpdateCamera(static_cast<float>(fixedDeltaSeconds));
+
             // Keep the previous angle so OnRender can interpolate between the
             // two. Without this there is nothing to interpolate *from*, and
             // alpha would be useless.
@@ -122,7 +134,7 @@ namespace
             {
                 wchar_t title[160];
                 ::swprintf_s(title,
-                             L"Blackwater - M1   |   %u fps   |   %u ups   |   debug layer: %s",
+                             L"Blackwater - M2   |   %u fps   |   %u ups   |   debug layer: %s",
                              m_frames, m_updates,
                              GetGraphics().IsDebugLayerActive() ? L"ON" : L"off");
 
@@ -152,16 +164,10 @@ namespace
 
             const XMMATRIX world = XMMatrixRotationY(angle) * XMMatrixRotationX(angle * 0.5f);
 
-            const XMMATRIX view = XMMatrixLookAtLH(
-                XMVectorSet(0.0f, 2.0f, -6.0f, 1.0f),   // eye
-                XMVectorZero(),                          // looking at the origin
-                XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));    // up
-
-            const XMMATRIX projection = XMMatrixPerspectiveFovLH(
-                XM_PIDIV4,      // 45 degree vertical field of view
-                aspect,
-                0.1f,           // near plane
-                100.0f);        // far plane
+            // The camera interpolates its own pose by alpha, the same way the
+            // cube's angle is interpolated above.
+            const XMMATRIX view       = m_camera.View(static_cast<float>(alpha));
+            const XMMATRIX projection = m_camera.Projection(aspect);
 
             // Row-vector convention: a vertex flows world -> view -> clip, so
             // the matrices multiply in that order.
@@ -184,6 +190,42 @@ namespace
         }
 
     private:
+        void UpdateCamera(float deltaSeconds)
+        {
+            const bw::Input& input = GetWindow().GetInput();
+
+            // Previous pose first, then change the current one -- the same
+            // order as the cube's angle.
+            m_camera.BeginStep();
+
+            // --- Rotate: middle-drag and Left/Right, one yaw delta -----------
+            float yawDelta = 0.0f;
+
+            if (input.IsButtonDown(bw::MouseButton::Middle))
+            {
+                yawDelta += static_cast<float>(input.MouseDeltaX()) * kRotateRadiansPerPixel;
+            }
+            if (input.IsKeyDown(VK_RIGHT)) { yawDelta += kRotateRadiansPerSecond * deltaSeconds; }
+            if (input.IsKeyDown(VK_LEFT))  { yawDelta -= kRotateRadiansPerSecond * deltaSeconds; }
+
+            m_camera.Rotate(yawDelta);
+
+            // --- Zoom: wheel and Up/Down, one notch count --------------------
+            float zoomNotches = input.WheelNotches();
+
+            if (input.IsKeyDown(VK_UP))   { zoomNotches += kZoomNotchesPerSecond * deltaSeconds; }
+            if (input.IsKeyDown(VK_DOWN)) { zoomNotches -= kZoomNotchesPerSecond * deltaSeconds; }
+
+            // Positive notches (wheel away from you, or Up) zoom in. pow turns
+            // a notch count into a ratio, so two notches are exactly one notch
+            // applied twice, whatever the current distance.
+            if (zoomNotches != 0.0f)
+            {
+                m_camera.Zoom(std::pow(kZoomFactorPerNotch, zoomNotches));
+            }
+        }
+
+        bw::Camera                     m_camera;
         bw::Shader                     m_shader;
         bw::Mesh                       m_mesh;
         bw::ConstantBuffer<Transforms> m_transforms;
@@ -202,7 +244,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
     try
     {
         SandboxApp app(bw::Application::Config{
-            .title  = L"Blackwater - M1",
+            .title  = L"Blackwater - M2",
             .width  = 1280,
             .height = 720,
         });
