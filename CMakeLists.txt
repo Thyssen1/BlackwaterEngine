@@ -72,6 +72,7 @@ target_compile_options(Blackwater.Common INTERFACE
 # CMake cannot build XAML. It keeps its own .csproj.
 # ---------------------------------------------------------------------------
 add_subdirectory(Blackwater.Core)
+add_subdirectory(Blackwater.Audio)
 add_subdirectory(Blackwater.Sandbox)
 
 # Make F5 in Visual Studio launch the sandbox rather than a random target.

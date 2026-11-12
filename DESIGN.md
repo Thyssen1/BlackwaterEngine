@@ -41,7 +41,8 @@ so such an include simply won't resolve.
 | `Blackwater.Core` | static lib | Platform, input, renderer, camera | ✅ |
 | `Blackwater.Sandbox` | .exe | Engine test bench — try engine features with no game attached | ✅ |
 | `Blackwater.Tests` | .exe (CTest) | Unit tests | planned (M4) |
-| `Blackwater.Audio` | static lib | Sound engine — XAudio2 | planned, see §7 |
+| `Blackwater.Audio` | static lib | Sound engine — XAudio2 ([spec](docs/Audio.md)) | API stub |
+| `Blackwater.Physics` | static lib | 2D collision & queries ([spec](docs/Physics.md)) | planned (M7) |
 | `Trinity` | .exe | **The game.** Created when the first game-specific code appears | planned |
 | `Blackwater.Editor` | WPF / .NET 10 | Tooling. MSBuild, outside CMake | parked |
 
@@ -66,6 +67,7 @@ BlackwaterEngine/
 ├─ Blackwater.Core/
 │   ├─ include/Blackwater/              public headers → #include <Blackwater/Window.h>
 │   └─ src/                             implementation
+├─ Blackwater.Audio/                    sound engine (API stub)
 ├─ Blackwater.Sandbox/                  engine test bench (src/, shaders/)
 ├─ Blackwater.Editor/                   WPF, parked
 └─ build/  bin/  lib/                   GENERATED — gitignored, safe to delete
@@ -141,11 +143,11 @@ call.
 | Module | Owner | Notes |
 |---|---|---|
 | Core / renderer / camera | Christian | |
-| **Audio** (`Blackwater.Audio`) | friend | XAudio2. Depends on nothing graphical; the game tells it the listener position as plain floats |
+| **Audio** (`Blackwater.Audio`) | friend | [docs/Audio.md](docs/Audio.md) |
+| **Physics** (`Blackwater.Physics`) | friend | [docs/Physics.md](docs/Physics.md) |
 | Tests | shared | Everyone tests their own module |
 
-Workflow: branches + pull requests on GitHub, `main` always builds, README with build
-steps. Decide the repo licence before outside contributions land.
+All work areas, the workflow, and further ideas: [docs/Collaboration.md](docs/Collaboration.md).
 
 ---
 
