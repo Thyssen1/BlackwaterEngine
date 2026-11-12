@@ -12,6 +12,9 @@ project(BlackwaterEngine
 # compiler flags below. Fail here, clearly, rather than 400 lines into a
 # compile on the wrong platform.
 # ---------------------------------------------------------------------------
+# PORT(M5): becomes a per-platform switch -- WIN32 builds the D3D11 backend,
+# APPLE builds the Metal one -- and the MSVC-only flags below move behind
+# if(MSVC), with clang equivalents for macOS.
 if(NOT WIN32)
     message(FATAL_ERROR "Blackwater targets Windows only (Win32 + D3D11).")
 endif()

@@ -7,6 +7,9 @@
 // Release() call in the implementation and no cleanup path to get wrong.
 //
 
+// PORT(M5): moves into Blackwater.RHI.D3D11 as the Windows backend. Core keeps
+// only a platform-neutral Device interface; nothing outside the backend may
+// see a D3D or DXGI type.
 #include <windows.h>
 #include <d3d11.h>
 #include <dxgi1_2.h>      // IDXGIFactory2 / IDXGISwapChain1 - the flip model

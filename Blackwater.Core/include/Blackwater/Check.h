@@ -11,6 +11,9 @@
 // So: every call is checked, and a failure names the exact call that failed.
 //
 
+// PORT(M5): HRESULT and GetLastError are Windows concepts, so BW_CHECK and
+// BW_CHECK_WIN32 move into the D3D11 backend. Core keeps a platform-neutral
+// failure report (expression, file, line) that each backend feeds.
 #include <windows.h>    // HRESULT, FAILED()
 #include <stdexcept>    // std::runtime_error
 

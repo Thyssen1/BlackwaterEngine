@@ -10,6 +10,8 @@
 // row-major; HLSL packs float4x4 constants column-major. Transposing on the
 // CPU makes those two conventions cancel out, so mul(vector, matrix) below
 // does what it reads like.
+// PORT(M5): HLSL stays the source language. For Metal it is cross-compiled at
+// build time (HLSL -> SPIR-V -> MSL); register(b0) maps to a Metal buffer index.
 cbuffer Transforms : register(b0)
 {
     float4x4 WorldViewProjection;

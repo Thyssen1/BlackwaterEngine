@@ -17,6 +17,8 @@ set(BLACKWATER_SANDBOX_SHADERS
 # WIN32 means /SUBSYSTEM:WINDOWS -- a GUI application, so no console window is
 # allocated and the entry point is wWinMain instead of main. Without it you get
 # a console app, and the linker goes looking for main().
+# PORT(M5): on macOS this becomes MACOSX_BUNDLE (a .app); SDL3 then provides
+# the entry point on both platforms, so wWinMain goes away.
 add_executable(Blackwater.Sandbox WIN32
     ${BLACKWATER_SANDBOX_SOURCES}
     ${BLACKWATER_SANDBOX_SHADERS}

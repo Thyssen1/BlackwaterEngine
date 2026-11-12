@@ -12,6 +12,8 @@
 
 #include "Blackwater/Check.h"
 
+// PORT(M5): moves into the D3D11 backend. The 16-byte rule stays relevant --
+// Metal's constant buffers have their own alignment rules too.
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <cstring>

@@ -9,6 +9,8 @@
 // when it is created, so they are only meaningful together.
 //
 
+// PORT(M5): moves into the D3D11 backend. Runtime D3DCompile is Windows-only;
+// Metal gets precompiled MSL, so shaders shift to build-time compilation.
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <cstdint>

@@ -38,6 +38,8 @@ namespace bw
         // ------------------------------------------------------------------
 
         /// virtualKey is a Win32 VK_ code (VK_LEFT, 'Q', ...).
+        /// PORT(M5): replaced by an engine Key enum mapped from SDL scancodes,
+        /// so game code never names a platform key code.
         [[nodiscard]] bool IsKeyDown(uint8_t virtualKey) const noexcept;
         [[nodiscard]] bool WasKeyPressed(uint8_t virtualKey) const noexcept;
 

@@ -9,6 +9,9 @@
 
 #include "Blackwater/Input.h"
 
+// PORT(M5): reimplemented on SDL3 for both platforms. The public surface
+// (PumpMessages, size, resize flag, GetInput) stays; HWND leaves the header and
+// is handed only to the D3D11 backend.
 #include <windows.h>
 #include <cstdint>
 

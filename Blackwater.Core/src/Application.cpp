@@ -93,7 +93,7 @@ namespace bw
             // gone there is nothing left to pace the loop.
             if (m_window.IsMinimized())
             {
-                ::Sleep(1);
+                ::Sleep(1);   // PORT(M5): std::this_thread::sleep_for -- Win32-only today
                 continue;
             }
 

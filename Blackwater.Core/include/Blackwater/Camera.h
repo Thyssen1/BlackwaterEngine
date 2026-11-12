@@ -11,6 +11,9 @@
 // alpha treatment as everything else that moves.
 //
 
+// PORT(M5): DirectXMath supports ARM, but needs verifying with clang on macOS.
+// If it fights us there, swap for a portable math library -- Camera's API uses
+// plain floats and XMFLOAT3 storage, so the blast radius is small.
 #include <DirectXMath.h>
 
 namespace bw

@@ -9,6 +9,8 @@
 // against the mesh.
 //
 
+// PORT(M5): moves into the D3D11 backend. D3D11_PRIMITIVE_TOPOLOGY in the
+// constructor becomes an engine enum (Triangles, Lines).
 #include <d3d11.h>
 #include <wrl/client.h>
 #include <cstdint>

@@ -32,6 +32,8 @@ namespace
         XMFLOAT4 colour;
     };
 
+    // PORT(M5): the one D3D type left in game-side code. Becomes an engine
+    // vertex-layout description that each backend translates.
     const D3D11_INPUT_ELEMENT_DESC kInputLayout[] =
     {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0,
@@ -377,6 +379,8 @@ namespace
     };
 }
 
+// PORT(M5): wWinMain and MessageBoxA are Win32. SDL3 supplies a portable main()
+// and SDL_ShowSimpleMessageBox for the error reports below.
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 {
     try
