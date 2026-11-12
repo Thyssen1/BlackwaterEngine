@@ -17,7 +17,7 @@ target_include_directories(Blackwater.Audio
     PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
 
-# Add xaudio2 to PRIVATE once the backend lands (see docs/Audio.md).
+# miniaudio (header-only) is added once the backend lands -- see docs/Audio.md.
 target_link_libraries(Blackwater.Audio
     PUBLIC
         Blackwater.Common

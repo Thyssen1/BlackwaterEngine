@@ -2,15 +2,14 @@
 
 //
 // Stub implementation: the API compiles and links, nothing makes sound yet.
-// The XAudio2 backend replaces these bodies -- see docs/Audio.md.
+// The miniaudio backend replaces these bodies -- see docs/Audio.md.
 //
 
 namespace bw
 {
     struct AudioEngine::Impl
     {
-        // XAudio2 device, mastering voice, one submix voice per category,
-        // loaded sounds, voice pool.
+        // miniaudio engine, one sound group per category, loaded sounds.
     };
 
     AudioEngine::AudioEngine()

@@ -9,7 +9,8 @@ reason to edit someone else's files.
 
 | Area | What | Boundary | When |
 |---|---|---|---|
-| **Audio** | XAudio2 sound engine | `Blackwater.Audio` — [spec](Audio.md) | now |
+| **Audio** | Sound engine (miniaudio, Windows + macOS) | `Blackwater.Audio` — [spec](Audio.md) | now |
+| **Metal backend** | macOS renderer behind the RHI | `Blackwater.RHI.Metal` | M5 |
 | **Physics / collision** | 2D collision, walkability, queries | `Blackwater.Physics` — [spec](Physics.md) | M7 |
 | **CI** | GitHub Actions: build + run tests on every pull request | `.github/workflows/` | M4 |
 | **Debug overlay / profiler** | On-screen frame time, counters, toggle with a key | Reads engine data, never changes it | after M3 |
@@ -22,6 +23,22 @@ reason to edit someone else's files.
 | **Gamepad** | XInput controller support | Feeds `Input` like the mouse does | anytime |
 | **Save / load** | Serialise game state | Plain data, no renderer | M10 |
 | **Logging** | Levels, file output, replaces `OutputDebugString` | Tiny, used by everyone | anytime |
+
+## Developing on macOS
+
+Until M5 the engine is Windows-only. Before then, a Mac developer can:
+- build and test **Audio** and **Physics** natively — neither may include platform headers;
+- run the full engine in a Windows VM (Parallels on Apple Silicon).
+
+From M5, the whole engine builds and runs natively on macOS through the Metal backend.
+
+## Tracking
+
+Work is tracked on a **GitHub Projects** Kanban board:
+- one **issue** per task, linked to its pull request;
+- a GitHub **milestone** per roadmap milestone (M3, M4, …);
+- an **area label** per module (`area:renderer`, `area:audio`, `area:physics`, …) so each
+  person can filter to their own work.
 
 ## Workflow
 

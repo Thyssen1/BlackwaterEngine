@@ -3,8 +3,8 @@
 //
 // The sound engine's public API. Spec and design notes: docs/Audio.md.
 //
-// The backend (XAudio2) is hidden behind a pointer to an incomplete type
-// ("pImpl"), so no XAudio2 header ever reaches code that includes this file,
+// The backend (miniaudio) is hidden behind a pointer to an incomplete type
+// ("pImpl"), so no backend header ever reaches code that includes this file,
 // and the internals can change without touching anyone else's code.
 //
 
